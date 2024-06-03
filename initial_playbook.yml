@@ -1,0 +1,68 @@
+- name: Perform tasks on frontend group
+  hosts: frontend
+  become: true
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install software-properties-common
+      apt:
+        name: software-properties-common
+        state: present
+
+    - name: Add Ansible PPA
+      ansible.builtin.command: sudo add-apt-repository --yes --update ppa:ansible/ansible
+
+    - name: Install Ansible
+      apt:
+        name: ansible
+        state: present
+
+    - name: Configure Ansible settings
+      blockinfile:
+        path: /etc/ansible/ansible.cfg
+        block: |
+          [defaults]
+          inventory=/etc/ansible/hosts
+          host_key_checking=false
+          remote_user=azureuser
+
+          [privilege_escalation]
+          become_user=root
+          become_method=sudo
+          become=yes
+        create: yes
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy inventory file and configure
+      copy:
+        src: /path/to/local/inventory.ini
+        dest: /etc/ansible/hosts
+        owner: root
+        group: root
+        mode: '0644'
+        remote_src: no
+
+    - name: Copy playbooks to the remote server
+      copy:
+        src: /Users/vikasupadhyaya/Desktop/Learn24/example_single/playbooks/
+        dest: /home/azureuser/playbooks/
+        mode: '0755'
+        owner: azureuser
+        group: azureuser
+
+    - name: Run playbook frontend.yml
+      ansible.builtin.command:
+        cmd: ansible-playbook /home/azureuser/playbooks/frontend.yml
+
+    - name: Run playbook backend.yml
+      ansible.builtin.command:
+        cmd: ansible-playbook /home/azureuser/playbooks/backend.yml
+
+    - name: Run playbook database.yml
+      ansible.builtin.command:
+        cmd: ansible-playbook /home/azureuser/playbooks/database.yml
